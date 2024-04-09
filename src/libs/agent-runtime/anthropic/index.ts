@@ -20,12 +20,12 @@ const DEFAULT_BASE_URL = 'https://api.anthropic.com';
 
 export class LobeAnthropicAI implements LobeRuntimeAI {
   private client: Anthropic;
-  
+
   baseURL: string;
 
   constructor({ apiKey, baseURL = DEFAULT_BASE_URL }: ClientOptions) {
     if (!apiKey) throw AgentRuntimeError.createError(AgentRuntimeErrorType.InvalidAnthropicAPIKey);
-    
+
     this.client = new Anthropic({ apiKey, baseURL });
     this.baseURL = this.client.baseURL;
   }
@@ -36,7 +36,7 @@ export class LobeAnthropicAI implements LobeRuntimeAI {
     const user_messages = messages.filter((m) => m.role !== 'system');
 
     try {
-      const response = await this.client.messages.create({
+      const response = await this.client.beta.tools.messages.create({
         max_tokens: max_tokens || 4096,
         messages: buildAnthropicMessages(user_messages),
         model: model,
