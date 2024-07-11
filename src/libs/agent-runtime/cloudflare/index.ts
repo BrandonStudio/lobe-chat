@@ -1,3 +1,5 @@
+import { ChatModelCard } from '@/types/llm';
+
 import { LobeRuntimeAI } from '../BaseAI';
 import { AgentRuntimeErrorType } from '../error';
 import { ChatCompetitionOptions, ChatStreamPayload, ModelProvider } from '../types';
@@ -26,12 +28,50 @@ function desensitizeCloudflareUrl(url: string): string {
   }
 }
 
+function getModelBeta(model: any): boolean {
+  try {
+    const betaProperty = model['properties'].filter(
+      (property: any) => property['name'] === 'beta',
+    );
+    if (betaProperty.length === 1) {
+      return betaProperty[0]['value'].toLowerCase() == true; // This is a string now.
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+function getModelDisplayName(model: any): string {
+  const modelId = model['name'];
+  let name = modelId.split('/').at(-1)!;
+  const beta = getModelBeta(model);
+  if (beta) {
+    name += ' (Beta)';
+  }
+  return name;
+}
+
+function getModelFunctionCalling(model: any): boolean {
+  try {
+    const fcProperty = model['properties'].filter(
+      (property: any) => property['name'] === 'function_calling',
+    );
+    if (fcProperty.length === 1) {
+      return fcProperty[0]['value'].toLowerCase() == true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 export class LobeCloudflareAI implements LobeRuntimeAI {
   baseURL: string;
   accountID: string;
   apiKey?: string;
 
-  constructor({ baseURLOrAccountID, apiKey }: { apiKey?: string, baseURLOrAccountID: string; }) {
+  constructor({ baseURLOrAccountID, apiKey }: { apiKey?: string; baseURLOrAccountID: string }) {
     if (baseURLOrAccountID.startsWith('http')) {
       this.baseURL = baseURLOrAccountID;
       // Try get accountID from baseURL
@@ -98,7 +138,7 @@ export class LobeCloudflareAI implements LobeRuntimeAI {
     }
   }
 
-  async getModels(): Promise<any> {
+  async getModels(): Promise<ChatModelCard[]> {
     try {
       const url = `${DEFAULT_BASE_URL_PREFIX}/client/v4/accounts/${this.accountID}/ai/models/search`;
       const response = await fetch(url, {
@@ -109,9 +149,21 @@ export class LobeCloudflareAI implements LobeRuntimeAI {
         method: 'GET',
       });
       const j = await response.json();
-      return j['result'].filter((model: any) => model['task']['name'] === 'Text Generation');
+      const models: any[] = j['result'].filter(
+        (model: any) => model['task']['name'] === 'Text Generation',
+      );
+      const chatModels: ChatModelCard[] = models.map((model) => {
+        return {
+          description: model['description'],
+          displayName: getModelDisplayName(model),
+          enabled: true,
+          functionCall: getModelFunctionCalling(model),
+          id: model['id'],
+        };
+      });
+      return chatModels;
     } catch {
-      // Do nothing
+      return [];
     }
   }
 }
