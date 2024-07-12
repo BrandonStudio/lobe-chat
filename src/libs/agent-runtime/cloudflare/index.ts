@@ -30,10 +30,9 @@ function desensitizeCloudflareUrl(url: string): string {
 
 function getModelBeta(model: any): boolean {
   try {
-    const betaProperty = model['properties'].filter(
-      (property: any) => property['name'] === 'beta',
-    );
+    const betaProperty = model['properties'].filter((property: any) => property['name'] === 'beta');
     if (betaProperty.length === 1) {
+      // eslint-disable-next-line eqeqeq
       return betaProperty[0]['value'].toLowerCase() == true; // This is a string now.
     }
     return false;
@@ -58,6 +57,7 @@ function getModelFunctionCalling(model: any): boolean {
       (property: any) => property['name'] === 'function_calling',
     );
     if (fcProperty.length === 1) {
+      // eslint-disable-next-line eqeqeq
       return fcProperty[0]['value'].toLowerCase() == true;
     }
     return false;
@@ -84,12 +84,6 @@ export class LobeCloudflareAI implements LobeRuntimeAI {
   }
 
   async chat(payload: ChatStreamPayload, options?: ChatCompetitionOptions): Promise<Response> {
-    // Implement your logic here
-    // This method should handle the chat functionality using the provided payload and options
-    // It should return a Promise that resolves to a Response object
-    // You can make API calls, perform computations, or any other necessary operations
-
-    // Example implementation:
     try {
       const { model, tools, ...restPayload } = payload;
       const functions = tools?.map((tool) => tool.function);
@@ -125,7 +119,35 @@ export class LobeCloudflareAI implements LobeRuntimeAI {
         }
       }
 
-      return StreamingResponse(response.body!); // TODO: Decide whether to handle undefined body.
+      return StreamingResponse(
+        response.body!.pipeThrough(
+          new TransformStream({
+            // TODO: Decide whether to handle undefined body.
+            async transform(chunk, controller) {
+              // Assume that chunk is text in form of `data: {"response": <text>, ...}`.
+              const textDecoder = new TextDecoder();
+              let textChunk = textDecoder.decode(chunk);
+              const dataPrefix = 'data: ';
+              textChunk = textChunk.replace(dataPrefix, '');
+              try {
+                const parsedChunk = JSON.parse(textChunk);
+                controller.enqueue(`event: text\n`);
+                controller.enqueue(`data: ${JSON.stringify(parsedChunk.response)}\n\n`);
+              } catch (e) {
+                if (textChunk.toUpperCase().includes('[DONE]')) {
+                  // Assume that chunk with "[DONE]" does not contain any other data.
+                  // [DONE] is not needed
+                  // controller.enqueue("data: [DONE]\n\n");
+                  controller.terminate();
+                  return;
+                } else {
+                  throw e;
+                }
+              }
+            },
+          }),
+        ),
+      );
     } catch (error) {
       const desensitizedEndpoint = desensitizeCloudflareUrl(this.baseURL);
 
