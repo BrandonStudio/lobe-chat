@@ -39,6 +39,10 @@ export const DEFAULT_LLM_CONFIG: UserModelProviderConfig = {
     enabled: false,
     enabledModels: filterEnabledModels(BedrockProviderCard),
   },
+  cloudflare: {
+    enabled: false,
+    enabledModels: filterEnabledModels(BedrockProviderCard),
+  },
   deepseek: {
     enabled: false,
     enabledModels: filterEnabledModels(DeepSeekProviderCard),

@@ -7,6 +7,7 @@ import { AgentRuntimeError } from '../utils/createError';
 import { desensitizeUrl } from '../utils/desensitizeUrl';
 import { StreamingResponse } from '../utils/response';
 
+const CF_PROPERTY_NAME = 'property_id';
 const DEFAULT_BASE_URL_PREFIX = 'https://api.cloudflare.com';
 
 function fillUrl(accountID: string): string {
@@ -30,7 +31,9 @@ function desensitizeCloudflareUrl(url: string): string {
 
 function getModelBeta(model: any): boolean {
   try {
-    const betaProperty = model['properties'].filter((property: any) => property['name'] === 'beta');
+    const betaProperty = model['properties'].filter(
+      (property: any) => property[CF_PROPERTY_NAME] === 'beta',
+    );
     if (betaProperty.length === 1) {
       // eslint-disable-next-line eqeqeq
       return betaProperty[0]['value'].toLowerCase() == true; // This is a string now.
@@ -41,10 +44,9 @@ function getModelBeta(model: any): boolean {
   }
 }
 
-function getModelDisplayName(model: any): string {
+function getModelDisplayName(model: any, beta: boolean): string {
   const modelId = model['name'];
   let name = modelId.split('/').at(-1)!;
-  const beta = getModelBeta(model);
   if (beta) {
     name += ' (Beta)';
   }
@@ -54,7 +56,7 @@ function getModelDisplayName(model: any): string {
 function getModelFunctionCalling(model: any): boolean {
   try {
     const fcProperty = model['properties'].filter(
-      (property: any) => property['name'] === 'function_calling',
+      (property: any) => property[CF_PROPERTY_NAME] === 'function_calling',
     );
     if (fcProperty.length === 1) {
       // eslint-disable-next-line eqeqeq
@@ -63,6 +65,20 @@ function getModelFunctionCalling(model: any): boolean {
     return false;
   } catch {
     return false;
+  }
+}
+
+function getModelTokens(model: any): number | undefined {
+  try {
+    const tokensProperty = model['properties'].filter(
+      (property: any) => property[CF_PROPERTY_NAME] === 'max_total_tokens',
+    );
+    if (tokensProperty.length === 1) {
+      return parseInt(tokensProperty[0]['value']);
+    }
+    return undefined;
+  } catch {
+    return undefined;
   }
 }
 
@@ -101,20 +117,12 @@ export class LobeCloudflareAI implements LobeRuntimeAI {
       const desensitizedEndpoint = desensitizeCloudflareUrl(this.baseURL);
 
       switch (response.status) {
-        case 401: {
+        case 400: {
           throw AgentRuntimeError.chat({
             endpoint: desensitizedEndpoint,
             error: response,
-            errorType: AgentRuntimeErrorType.InvalidProviderAPIKey,
-            provider: ModelProvider.Anthropic,
-          });
-        }
-        case 403: {
-          throw AgentRuntimeError.chat({
-            endpoint: desensitizedEndpoint,
-            error: response,
-            errorType: AgentRuntimeErrorType.LocationNotSupportError,
-            provider: ModelProvider.Anthropic,
+            errorType: AgentRuntimeErrorType.ProviderBizError,
+            provider: ModelProvider.Cloudflare,
           });
         }
       }
@@ -160,7 +168,7 @@ export class LobeCloudflareAI implements LobeRuntimeAI {
     }
   }
 
-  async getModels(): Promise<ChatModelCard[]> {
+  async models(): Promise<ChatModelCard[]> {
     try {
       const url = `${DEFAULT_BASE_URL_PREFIX}/client/v4/accounts/${this.accountID}/ai/models/search`;
       const response = await fetch(url, {
@@ -175,12 +183,14 @@ export class LobeCloudflareAI implements LobeRuntimeAI {
         (model: any) => model['task']['name'] === 'Text Generation',
       );
       const chatModels: ChatModelCard[] = models.map((model) => {
+        const modelBeta = getModelBeta(model);
         return {
           description: model['description'],
-          displayName: getModelDisplayName(model),
-          enabled: true,
+          displayName: getModelDisplayName(model, modelBeta),
+          enabled: !modelBeta,
           functionCall: getModelFunctionCalling(model),
-          id: model['id'],
+          id: model['name'],
+          tokens: getModelTokens(model),
         };
       });
       return chatModels;
