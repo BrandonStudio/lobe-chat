@@ -82,6 +82,39 @@ function getModelTokens(model: any): number | undefined {
   }
 }
 
+class CloudflareStreamTransformer {
+  private textDecoder = new TextDecoder();
+  private buffer: string = '';
+
+  private parseChunk(chunk: string, controller: TransformStreamDefaultController) {
+    const dataPrefix = /^data: /;
+    const json = chunk.replace(dataPrefix, '');
+    const parsedChunk = JSON.parse(json);
+    controller.enqueue(`event: text\n`);
+    controller.enqueue(`data: ${JSON.stringify(parsedChunk.response)}\n\n`);
+  }
+
+  public async transform(chunk: Uint8Array, controller: TransformStreamDefaultController) {
+    let textChunk = this.textDecoder.decode(chunk);
+    if (this.buffer.trim() !== '') {
+      textChunk = this.buffer + textChunk;
+      this.buffer = '';
+    }
+    const splits = textChunk.split('\n\n');
+    for (let i = 0; i < splits.length - 1; i++) {
+      if (/\[DONE]/.test(splits[i].trim())) {
+        // [DONE] is not needed
+        return;
+      }
+      this.parseChunk(splits[i], controller);
+    }
+    const lastChunk = splits.at(-1)!;
+    if (lastChunk.trim() !== '') {
+      this.buffer += lastChunk; // does not need to be trimmed.
+    } // else drop.
+  }
+}
+
 export class LobeCloudflareAI implements LobeRuntimeAI {
   baseURL: string;
   accountID: string;
@@ -128,33 +161,7 @@ export class LobeCloudflareAI implements LobeRuntimeAI {
       }
 
       return StreamingResponse(
-        response.body!.pipeThrough(
-          new TransformStream({
-            // TODO: Decide whether to handle undefined body.
-            async transform(chunk, controller) {
-              // Assume that chunk is text in form of `data: {"response": <text>, ...}`.
-              const textDecoder = new TextDecoder();
-              let textChunk = textDecoder.decode(chunk);
-              const dataPrefix = 'data: ';
-              textChunk = textChunk.replace(dataPrefix, '');
-              try {
-                const parsedChunk = JSON.parse(textChunk);
-                controller.enqueue(`event: text\n`);
-                controller.enqueue(`data: ${JSON.stringify(parsedChunk.response)}\n\n`);
-              } catch (e) {
-                if (textChunk.toUpperCase().includes('[DONE]')) {
-                  // Assume that chunk with "[DONE]" does not contain any other data.
-                  // [DONE] is not needed
-                  // controller.enqueue("data: [DONE]\n\n");
-                  controller.terminate();
-                  return;
-                } else {
-                  throw e;
-                }
-              }
-            },
-          }),
-        ),
+        response.body!.pipeThrough(new TransformStream(new CloudflareStreamTransformer())),
       );
     } catch (error) {
       const desensitizedEndpoint = desensitizeCloudflareUrl(this.baseURL);
