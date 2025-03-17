@@ -108,7 +108,7 @@ jobs:
       - name: Upload Built tarball
         uses: actions/upload-artifact@v4
         with:
-          name: Docker OCI ${{ matrix.platform }}
+          name: docker-oci-${{ matrix.os }}
           path: /tmp/tmpdkbdimg.tar
 
 #  merge:
