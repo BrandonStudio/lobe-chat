@@ -133,6 +133,10 @@ export default {
     InvalidGithubToken: 'Github PAT 不正确或为空，请检查 Github PAT 后重试',
     ConnectionCheckFailed: '请求返回为空，请检查 API 代理地址末尾是否未包含 `/v1`',
 
+    // Plugin
+    PluginNotSupportError:
+      '当前模型或提供商无法支持已启用的某些插件，请更换插件或模型。这可能是意外的插件清单造成的，请联系开发人员或插件作者',
+
     /* eslint-enable */
   },
   stt: {

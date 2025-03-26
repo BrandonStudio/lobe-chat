@@ -26,6 +26,8 @@ export const AgentRuntimeErrorType = {
 
   ConnectionCheckFailed: 'ConnectionCheckFailed',
 
+  PluginNotSupportError: 'PluginNotSupportError',
+
   /**
    * @deprecated
    */

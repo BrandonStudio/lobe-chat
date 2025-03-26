@@ -1,7 +1,6 @@
 import { ModelProviderCard } from '@/types/llm';
 
 // ref https://developers.cloudflare.com/workers-ai/models/#text-generation
-// api https://developers.cloudflare.com/workers-ai/configuration/open-ai-compatibility
 const Cloudflare: ModelProviderCard = {
   chatModels: [
     {
@@ -18,13 +17,22 @@ const Cloudflare: ModelProviderCard = {
     {
       contextWindowTokens: 4096,
       displayName: 'hermes-2-pro-mistral-7b',
-      // functionCall: true,
+      enabled: true,
+      functionCall: true,
       id: '@hf/nousresearch/hermes-2-pro-mistral-7b',
     },
     {
-      contextWindowTokens: 131_072,
-      displayName: 'llama 3.3 70b',
+      contextWindowTokens: 24_000,
+      description: 'Llama 3.3 70B quantized to fp8 precision, optimized to be faster.',
+      displayName: 'llama-3.3-70b-instruct-fp8-fast',
+      enabled: true,
+      functionCall: true,
       id: '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+    },
+    {
+      contextWindowTokens: 8192,
+      displayName: 'llama-3-8b-instruct-awq',
+      id: '@cf/meta/llama-3-8b-instruct-awq',
     },
     {
       contextWindowTokens: 4096,
