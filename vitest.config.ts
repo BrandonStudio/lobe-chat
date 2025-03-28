@@ -1,10 +1,20 @@
 import { resolve } from 'node:path';
 import { defineConfig } from 'vitest/config';
+import { defaultServerConditions } from 'vite';
 
 export default defineConfig({
   optimizeDeps: {
     exclude: ['crypto', 'util', 'tty'],
     include: ['@lobehub/tts'],
+  },
+  ssr: {
+    resolve: {
+      // TODO: Check the impact to other tests
+      conditions: [
+        'browser',
+        ...defaultServerConditions.filter((v) => v !== 'module'),
+      ],
+    },
   },
   test: {
     alias: {
@@ -27,7 +37,7 @@ export default defineConfig({
     },
     environment: 'happy-dom',
     exclude: [
-      '**/node_modules/**',
+      //'**/node_modules/**',
       '**/dist/**',
       '**/build/**',
       'src/database/server/**/**',
@@ -36,7 +46,11 @@ export default defineConfig({
     globals: true,
     server: {
       deps: {
-        inline: ['vitest-canvas-mock'],
+        inline: [
+          // Direct module exports requiring mocks. Refs: https://github.com/vitest-dev/vitest/issues/5625#issuecomment-2078969371
+          '@azure-rest/ai-inference',
+          'vitest-canvas-mock',
+        ],
       },
     },
     setupFiles: './tests/setup.ts',
