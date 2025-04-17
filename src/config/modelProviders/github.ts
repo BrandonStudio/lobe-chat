@@ -57,6 +57,60 @@ const Github: ModelProviderCard = {
       vision: true,
     },
     {
+      contextWindowTokens: 1_047_576,
+      description:
+        'GPT-4.1 是我们用于复杂任务的旗舰模型。它非常适合跨领域解决问题。',
+      displayName: 'GPT-4.1',
+      enabled: true,
+      id: 'gpt-4.1',
+      maxOutput: 32_768,
+      pricing: {
+        cachedInput: 0.5,
+        input: 2,
+        output: 8,
+      },
+      releasedAt: '2025-04-14',
+      type: 'chat',
+      functionCall: true,
+      vision: true,
+    },
+    {
+      contextWindowTokens: 1_047_576,
+      description:
+        'GPT-4.1 mini 提供了智能、速度和成本之间的平衡，使其成为许多用例中有吸引力的模型。',
+      displayName: 'GPT-4.1 mini',
+      enabled: true,
+      id: 'gpt-4.1-mini',
+      maxOutput: 32_768,
+      pricing: {
+        cachedInput: 0.1,
+        input: 0.4,
+        output: 1.6,
+      },
+      releasedAt: '2025-04-14',
+      type: 'chat',
+      functionCall: true,
+      vision: true,
+    },
+    {
+      contextWindowTokens: 1_047_576,
+      description:
+        'GPT-4.1 nano 提供了智能、速度和成本之间的平衡，使其成为许多用例中有吸引力的模型。',
+      displayName: 'GPT-4.1 nano',
+      enabled: true,
+      id: 'gpt-4.1-nano',
+      maxOutput: 32_768,
+      pricing: {
+        cachedInput: 0.025,
+        input: 0.1,
+        output: 0.4,
+      },
+      releasedAt: '2025-04-14',
+      type: 'chat',
+      functionCall: true,
+      vision: true,
+    },
+    {
       contextWindowTokens: 128_000,
       displayName: 'DeepSeek R1',
       id: 'DeepSeek-R1',
@@ -148,6 +202,33 @@ const Github: ModelProviderCard = {
       enabled: true,
       functionCall: true,
       id: 'llama-3.3-70b-instruct',
+    },
+    {
+      contextWindowTokens: 32_768,
+      description:
+        'Llama 4.1 是 Llama 系列最先进的多语言开源大型语言模型，以极低成本体验媲美 405B 模型的性能。基于 Transformer 结构，并通过监督微调（SFT）和人类反馈强化学习（RLHF）提升有用性和安全性。其指令调优版本专为多语言对话优化，在多项行业基准上表现优于众多开源和封闭聊天模型。知识截止日期为 2024 年 12 月',
+      displayName: 'Llama 4.1 70B Instruct',
+      enabled: true,
+      functionCall: true,
+      id: 'llama-4.1-70b-instruct',
+    },
+    {
+      contextWindowTokens: 131_072,
+      description:
+        'Llama 4.1 是 Llama 系列最先进的多语言开源大型语言模型，以极低成本体验媲美 405B 模型的性能。基于 Transformer 结构，并通过监督微调（SFT）和人类反馈强化学习（RLHF）提升有用性和安全性。其指令调优版本专为多语言对话优化，在多项行业基准上表现优于众多开源和封闭聊天模型。知识截止日期为 2024 年 12 月',
+      displayName: 'Llama-4-Scout-17B-16E-Instruct',
+      enabled: true,
+      functionCall: true,
+      id: 'llama-4-scout-17b-16e-instruct',
+    },
+    {
+      contextWindowTokens: 131_072,
+      description:
+        'Llama 4.1 是 Llama 系列最先进的多语言开源大型语言模型，以极低成本体验媲美 405B 模型的性能。基于 Transformer 结构，并通过监督微调（SFT）和人类反馈强化学习（RLHF）提升有用性和安全性。其指令调优版本专为多语言对话优化，在多项行业基准上表现优于众多开源和封闭聊天模型。知识截止日期为 2024 年 12 月',
+      displayName: 'Llama-4-Maverick-17B-128E-Instruct-FP8',
+      enabled: true,
+      functionCall: true,
+      id: 'llama-4-maverick-17b-128e-instruct-fp8',
     },
     {
       contextWindowTokens: 131_072,
